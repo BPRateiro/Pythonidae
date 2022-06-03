@@ -150,6 +150,8 @@ class Snake(object):
         self.turns = {}
         self.head = Cube(position, color=self.color)
         self.body.append(self.head)
+        self.add_cube()
+        self.add_cube()
         self.x_direction = 0
         self.y_direction = 1
 
@@ -184,7 +186,7 @@ def manage_text(surface, snake):
     little = pygame.font.Font('freesansbold.ttf', 12)
 
     title = font.render(f"Pythonidae", True, COLORS['py_blue'])
-    score = font.render(f"Score {len(snake.body) - 3}", True, COLORS['white'], )
+    score = font.render(f"{len(snake.body) - 3}", True, COLORS['white'], )
     instructions = little.render('(Press ESC to exit the game)', True, COLORS['white'])
 
     surface.blit(title, (10, 10))
@@ -217,10 +219,6 @@ def message_box(subject, content):
         root.destroy()
     except Exception as error:
         print(error)
-
-
-def draw_score():
-    pass
 
 
 def main():
