@@ -5,6 +5,7 @@
 # My objective is to practice OOP and try some of Python's libraries.
 # Hope we have some fun!
 import random
+import sys
 import tkinter as tk
 from tkinter import messagebox
 
@@ -15,8 +16,8 @@ COLORS = {'black': (0, 0, 0),
           'white': (255, 255, 255),
           'red': (255, 0, 0),
           'green': (0, 255, 0),
-          'blue': (0, 0, 255),
-          'yellow': (255, 211, 67)}
+          'py_blue': (75, 139, 190),
+          'py_yellow': (255, 212, 59)}
 # Defining some window parameters:
 SIZE = (600, 600)
 ROWS = 30
@@ -24,7 +25,7 @@ ROWS = 30
 
 # Classes Definition
 class Cube(object):
-    def __init__(self, position, x_direction=1, y_direction=0, color=COLORS['yellow']):
+    def __init__(self, position, x_direction=1, y_direction=0, color=COLORS['py_yellow']):
         self.position = position
         self.x_direction = x_direction
         self.y_direction = y_direction
@@ -60,6 +61,8 @@ class Snake(object):
         self.color = color
         self.head = Cube(position, color=self.color)
         self.body.append(self.head)
+        self.add_cube()
+        self.add_cube()
         self.x_direction = 1
         self.y_direction = 0
 
@@ -67,12 +70,16 @@ class Snake(object):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                sys.exit()
 
             keys = pygame.key.get_pressed()
 
             # For each key pressed, only change directions if the snake isn't already going on opposite direction
             # This avoids running left-right and the snake swallowing itself
             for _ in keys:
+                if keys[pygame.K_ESCAPE]:
+                    pygame.quit()
+                    sys.exit()
                 if keys[pygame.K_LEFT] and self.x_direction != 1:
                     self.x_direction = -1
                     self.y_direction = 0
@@ -115,7 +122,7 @@ class Snake(object):
     def draw(self, surface):
         for index, cube in enumerate(self.body):
             if index == 0:
-                cube.draw(surface, True)
+                cube.draw(surface, eyes=True)
             else:
                 cube.draw(surface)
 
@@ -138,6 +145,7 @@ class Snake(object):
 
     def reset(self, position):
         """Resets the snake object"""
+        message_box('You Lost!', f'Score: {len(self.body)}')
         self.body = []
         self.turns = {}
         self.head = Cube(position, color=self.color)
@@ -157,17 +165,31 @@ def draw_grid(surface):
         x += size_between
         y += size_between
 
-        pygame.draw.line(surface, COLORS['black'], (x, 0), (x, width))
-        pygame.draw.line(surface, COLORS['black'], (0, y), (width, y))
+        pygame.draw.line(surface, COLORS['white'], (x, 0), (x, width))
+        pygame.draw.line(surface, COLORS['white'], (0, y), (width, y))
 
 
 def redraw_window(surface: pygame.Surface, snake: Snake, snack: Cube):
-    """Erases the window, draws the grid and updates the visual"""
+    """Erases the window, draws the text and updates the visual elements"""
     surface.fill(COLORS['black'])
-    draw_grid(surface)
+    # draw_grid(surface)
+    manage_text(surface, snake)
     snake.draw(surface)
     snack.draw(surface)
     pygame.display.update()
+
+
+def manage_text(surface, snake):
+    font = pygame.font.Font('freesansbold.ttf', 20)
+    little = pygame.font.Font('freesansbold.ttf', 12)
+
+    title = font.render(f"Pythonidae", True, COLORS['py_blue'])
+    score = font.render(f"Score {len(snake.body) - 3}", True, COLORS['white'], )
+    instructions = little.render('(Press ESC to exit the game)', True, COLORS['white'])
+
+    surface.blit(title, (10, 10))
+    surface.blit(score, (SIZE[0] - score.get_width() - 10, 10))
+    surface.blit(instructions, ((SIZE[0] - instructions.get_width()) // 2, SIZE[1] - instructions.get_height() - 10))
 
 
 def random_snack(snake):
@@ -197,18 +219,27 @@ def message_box(subject, content):
         print(error)
 
 
+def draw_score():
+    pass
+
+
 def main():
     """Controls the game flow."""
-    window = pygame.display.set_mode(SIZE)
-    clock = pygame.time.Clock()
-    snake = Snake(COLORS['blue'], (ROWS // 2, ROWS // 2))  # RGB values, coordinates
+
+    # Elements
+    snake = Snake(COLORS['py_blue'], (ROWS // 2, ROWS // 2))  # RGB values, coordinates
     snack = Cube(random_snack(snake))
 
+    # Game Flow
+    clock = pygame.time.Clock()
     pygame.init()
 
+    # Window creation
+    window = pygame.display.set_mode(SIZE, pygame.NOFRAME)
+
     while True:
-        pygame.time.delay(100)  # 50ms so that the game doesn't run too fast
-        clock.tick(10)  # Speed in FPS
+        pygame.time.delay(120)  # 120ms so that the game doesn't run too fast
+        clock.tick(10)  # Controls FPS
 
         snake.move()
         if snake.body[0].position == snack.position:  # If the snake's head is at the snacks position:
@@ -219,7 +250,6 @@ def main():
         # Checking for collision
         for i in range(len(snake.body)):
             if snake.body[i].position in list(map(lambda cb: cb.position, snake.body[i + 1:])):
-                message_box('You Lost!', f'Score: {len(snake.body)}')
                 snake.reset((ROWS // 2, ROWS // 2))
                 break
 
