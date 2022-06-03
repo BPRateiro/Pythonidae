@@ -4,11 +4,11 @@
 # The full tutorial can be found at: https://www.youtube.com/watch?v=XGf2GcyHPhc&t=2736s
 # My objective is to practice OOP and try some of Python's libraries.
 # Hope we have some fun!
-import ctypes
 import random
-import pygame
 import tkinter as tk
 from tkinter import messagebox
+
+import pygame
 
 # Defining RGB colors used in game
 COLORS = {'black': (0, 0, 0),
@@ -18,8 +18,8 @@ COLORS = {'black': (0, 0, 0),
           'blue': (0, 0, 255),
           'yellow': (255, 211, 67)}
 # Defining some window parameters:
-SIZE = (500, 500)
-ROWS = 20
+SIZE = (600, 600)
+ROWS = 30
 
 
 # Classes Definition
@@ -60,9 +60,8 @@ class Snake(object):
         self.color = color
         self.head = Cube(position, color=self.color)
         self.body.append(self.head)
-        self.x_direction = 0
-        self.y_direction = 1
-        pass
+        self.x_direction = 1
+        self.y_direction = 0
 
     def move(self):
         for event in pygame.event.get():
@@ -71,17 +70,19 @@ class Snake(object):
 
             keys = pygame.key.get_pressed()
 
+            # For each key pressed, only change directions if the snake isn't already going on opposite direction
+            # This avoids running left-right and the snake swallowing itself
             for _ in keys:
-                if keys[pygame.K_LEFT]:
+                if keys[pygame.K_LEFT] and self.x_direction != 1:
                     self.x_direction = -1
                     self.y_direction = 0
-                elif keys[pygame.K_RIGHT]:
+                elif keys[pygame.K_RIGHT] and self.x_direction != -1:
                     self.x_direction = 1
                     self.y_direction = 0
-                elif keys[pygame.K_UP]:
+                elif keys[pygame.K_UP] and self.y_direction != 1:
                     self.x_direction = 0
                     self.y_direction = -1
-                elif keys[pygame.K_DOWN]:
+                elif keys[pygame.K_DOWN] and self.y_direction != -1:
                     self.x_direction = 0
                     self.y_direction = 1
                 else:  # If other buttons were pressed, no need to remember the snake position/direction
@@ -135,6 +136,15 @@ class Snake(object):
         self.body[-1].x_direction = x_tail_direction
         self.body[-1].y_direction = y_tail_direction
 
+    def reset(self, position):
+        """Resets the snake object"""
+        self.body = []
+        self.turns = {}
+        self.head = Cube(position, color=self.color)
+        self.body.append(self.head)
+        self.x_direction = 0
+        self.y_direction = 1
+
 
 # Functions Definition
 def draw_grid(surface):
@@ -147,8 +157,8 @@ def draw_grid(surface):
         x += size_between
         y += size_between
 
-        pygame.draw.line(surface, COLORS['white'], (x, 0), (x, width))
-        pygame.draw.line(surface, COLORS['white'], (0, y), (width, y))
+        pygame.draw.line(surface, COLORS['black'], (x, 0), (x, width))
+        pygame.draw.line(surface, COLORS['black'], (0, y), (width, y))
 
 
 def redraw_window(surface: pygame.Surface, snake: Snake, snack: Cube):
@@ -176,6 +186,17 @@ def random_snack(snake):
     return x, y
 
 
+def message_box(subject, content):
+    root = tk.Tk()
+    root.attributes('-topmost', True)
+    root.withdraw()
+    messagebox.showinfo(subject, content)
+    try:
+        root.destroy()
+    except Exception as error:
+        print(error)
+
+
 def main():
     """Controls the game flow."""
     window = pygame.display.set_mode(SIZE)
@@ -186,7 +207,7 @@ def main():
     pygame.init()
 
     while True:
-        pygame.time.delay(50)  # 50ms so that the game doesn't run too fast
+        pygame.time.delay(100)  # 50ms so that the game doesn't run too fast
         clock.tick(10)  # Speed in FPS
 
         snake.move()
@@ -194,6 +215,13 @@ def main():
             snake.add_cube()
             snack = Cube(random_snack(snake))
         redraw_window(window, snake, snack)
+
+        # Checking for collision
+        for i in range(len(snake.body)):
+            if snake.body[i].position in list(map(lambda cb: cb.position, snake.body[i + 1:])):
+                message_box('You Lost!', f'Score: {len(snake.body)}')
+                snake.reset((ROWS // 2, ROWS // 2))
+                break
 
 
 # Good luck, have fun!
