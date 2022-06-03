@@ -145,15 +145,15 @@ class Snake(object):
 
     def reset(self, position):
         """Resets the snake object"""
-        message_box('You Lost!', f'Score: {len(self.body)}')
+        message_box('You Lost!', f'Score: {len(self.body) -3}')
         self.body = []
         self.turns = {}
         self.head = Cube(position, color=self.color)
         self.body.append(self.head)
         self.add_cube()
         self.add_cube()
-        self.x_direction = 0
-        self.y_direction = 1
+        self.x_direction = 1
+        self.y_direction = 0
 
 
 # Functions Definition
